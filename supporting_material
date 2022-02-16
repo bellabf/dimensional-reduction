@@ -1,0 +1,104 @@
+An overview of dimension reduction techniques for single-cell sequencing data
+Isabella Bicalho Frazeto
+
+
+
+Summary
+
+Single-cell sequencing is a methodology that allows for high resolution of transcripts. It is an established technique that has generated a lot of insights in the last few years. High dimensionality is an intrinsic feature of it. The strategies for dimension reduction broadly fall into two categories: classical methods and auto-encoders. Our goal is to compare the performance and properties of the existing methods including PCA, Multidimensional Scaling, t-SNE, U-MAP, and the emerging auto-encoders based techniques. There is no specific method that consists performs better since the underlying data structure is not known. However, the adaptions of t-SNE and U-MAP, as well as the auto-encoders, preserve underlying structures in low dimensions with fewer distortions compared to the other methodologies.
+
+Abbreviations
+
+M: number of transformed predictors
+P: number of predictors
+N: number of observations
+
+Introduction
+
+Single-cell sequencing is a technique that allows for single-cell level resolution of RNA sequencing (Ziegenhain et al. 2017). It was highlighted as the methodology of the year in 2013 (Nature Methods, 2014), and ever since it generates biological insights consistently. It allows for the different cell types clustering, the discovery of novel cell types, and the description of its transitioning states (Lähnenmann, Köster, and Szczurek 2020).
+ Such high-resolution data has its own set of challenges. For starters, since the total amount of material available in the cell is reduced, uncertainty is higher with more noise arising from the technique itself (Lähnenmann, Köster, and Szczurek 2020). Moreover, as the resolution increases, so does the dimensionality of your data. This issue was already present in high throughput sequencing but was further aggravated with the advent of single-cell sequencing. Because of this, there is a steady reliance on data science methods to analyze single-cell data. From those approaches are methods that can reduce the data complexity (Lähnenmann, Köster, and Szczurek 2020, Kharchenko 2021).
+Dimension reduction is a class of approaches that fit a model using transformed predictors (James et al. 2021). The names come from the transformation itself. Since the number of transformed predictors (M) is smaller than the number of original predictors (P), the dimension reduces from P+1 to M+1. If M = P, all predictors are independent, and no reduction occurs. Any setting where the P >> N is a high dimensional one.  
+Although, dimension reduction is often applied to do the data visualization. It is a pre-processing step in model building (James et al. 2021, Kuhn and Johnson 2019). Classically, statistical approaches were designed for low dimensional settings, i.e P << N. Models such as linear regression sometimes cannot be fitted using the least square method. Even when they can, there is a greater risk model overfitting (James et al. 2021, Kuhn and Johnson 2019). 
+The dangers of overfitting are especially relevant when dealing with medical predictions. For instance, artificial intelligence models for COVID detection reportedly count more on confounding factors than medical pathology, which causes the model to perform well in the hospital it was trained, but fails in new settings (DeGrave, Janizek, and Lee 2021).
+However, this is not the only context where overfitting is relevant. For research, this is also dangerous because it does not allow academics to distinguish between biological meaningful information and noise. Thus, it yields misleading results and makes it difficult to compare similar models (Kuhn and Johnson 2019).
+Naively, it is easy to think that as the number of features increases, so does the quality of the model. However, this is not guaranteed. As the number of features increases, so does the chance that one feature might be associated with a particular response simply by chance. Incorporating it in the model will cause it to deteriorate (James et al. 2021, Kuhn and Johnson 2019). Thus, generating the curse of dimensionality: adding truly associated features will improve the model, but the ability to distinguish noise from the signal diminishes (Courville, Goodfellow, and Bengio 2016).
+Lastly, there are many applications of dimensional reduction methods in multi-omics. Data integration is already challenging in itself. The emergence of single-cell resolution methods further complicates this problem, making data assimilation increasingly more difficult (Moon et al. 2019). 
+
+Methods
+
+Principal Component Analysis
+Principal Component Analysis (PCA) is a sequence of w vectors, where the i-th vector is the direction of a line that best fits the data while being orthogonal to the first i-1 vectors. It effectively performs a change of basis in the data by minimizing the average distance between the points to the line (James et al. 2021, Kuhn and Johnson 2019 . Each w vector is the equivalent of the eigenvector of the covariance matrix (James et al. 2021).
+In the case of the single-cell data, the first w principal components describe a low dimensional hyperplane of decreasing transcriptional variance between cells. Due to its nature, PCA application for single-cell sequencing is problematic. First, the variance will be biased towards transcripts with a high range, at the cost of broader transcriptional patterns (Kharchenko 2021). On top of that, the high frequency of zero counts in the data will be translated into a unique spike, that skews the distribution even after normalization (Kharchenko 2021). However, it is the only method discussed here that has a unique analytical solution. 
+ICA
+#todo
+
+Multidimensional scaling
+Multidimensional scaling (MDS) is a form of non-linear dimensionality reduction. It transforms the information into a lower-dimensional space chosen by the user while preserving pairwise distance. It is a flexible method that accepts both metric and non-metric solutions. It is also capable of dealing with several loss functions (Tzeng, Lu, and Li 2008).
+One of the main advantages of MDS is its ability to deal with non-metric distance, the tolerance for missing data, and the fact it can deal with an asymmetrical distance matrix. For zero-rich data such as single-cell sequencing, one can use the Bray-Curtis distance since it deals well with a large proportion of zeros (thus, it would better handle the absence of transcripts). It would not consider the absence as a sign of similarity, which might make sense depending on the question at hand. However, the MDS algorithm has a high computational cost, limiting its applications.
+
+t-SNE
+The t-distributed stochastic neighbor embedding (t-SNE) converts high-dimensional Euclidean distances between data points so that similar objects are assigned a higher probability while dissimilar points are assigned a lower one (Linderman and Steinerberger 2019, van der Maaten and Hinton 2008, Kobak and Berens 2019). Subsequently, it defines a probability distribution in the low-dimensional map (more precisely, a t-student distribution with heavy tails). Lastly, it tries to minimize the difference between the two probability distributions (Linderman and Steinerberger 2019, van der Maaten and Hinton 2008, Kobak and Berens 2019). 
+ 	The original paper uses the Euclidean distance, but this can be changed if necessary. Moreover, it is optimized by gradient descent. However, since its cost function is not convex, different initialization will give you different results. Unlike PCA, t-SNE is a non-linear embedding method. It captures much more of the local structure of the high-dimensional data (Narayan, Berger, and Cho 2021).
+	The t-SNE algorithm produces distinctly isolated clusters when applied to high-dimensional clustered data, making it one of the most used algorithms for visual exploration of single-cell sequencing data (Kobak and Berens 2019). However, it does not preserve global structure well. The relative positions of clusters depend more on its initialization than everything else, making them completely arbitrary (Kobak and Berens 2019). 
+
+U-MAP
+Uniform manifold approximation and projection (U-MAP) is a non-linear embedding method based on the theoretical framework based on Riemannian geometry and algebraic topology (McInnes, Healy, and Melville 2020). The full description of it is far beyond the scope of this paper, since it relies on a well-formed theoretical ground that we do not have the space to define here. In broader terms, the algorithm constructs a fuzzy topological representation of high-dimensional data by changing the low-dimensional embedding until it becomes more similar to the original data (McInnes, Healy, and Melville 2020, Ghojogh et al. 2021). It is less computational expensive while still preserving more of the global structure compared to t-SNE (McInnes, Healy, and Melville 2020).
+
+Adaptions for single-cell sequencing
+	Both t-SNE and U-MAP do not account for the density of the data points. This might lead to misleading data visualization because the cluster size will reflect the number of points without any information about its heterogeneity (Narayan, Berger, and Cho 2021). For single-cell sequencing, this means that clustering size will only reflect the number of cells in it, and it will have no information about the diversity of their gene expression.
+This pitfall was the motivation behind the work of (Narayan, Berger, and Cho 2021) that introduced the density-preserving t-SNE and U-MAP referred to as den-SNE and dens-MAP. They do so by passing an auxiliary term that measures the distortion of local density, which represents the average distance to the nearest neighbor of a given point. Thus, cluster size is also capable of reflecting its transcriptomic variability. They also show that they reveal clustering and trajectory patterns and that the local density information offers more biological insights than the other tools (Figure 1).
+
+
+Figure 1. Overview of the density preserving properties of den-SNE and densMAP when compared to the original methods. Adapted from (Narayan, Berger, and Cho 2021).
+
+Semi-supervised learning
+	By definition, unsupervised learning is a class of methods that describe some data properties without any labels. In contrast with supervised where all the points in the dataset are labeled. A hybrid approach, semi-supervised, also exists between the group of techniques where only some part of the data is labeled. It is thought to improve model accuracy (Courville, Goodfellow, and Bengio 2016, James et al. 2021). Typically, dimension reduction techniques are largely unsupervised. Nonetheless, supervised dimension reduction is advantageous for marker gene expression, cell type label prediction, and it is the basis of much of the new algorithms described in the next section (Chari, Banerjee, and Pachter 2021).
+
+
+Criticism of classical methods
+According to Chari, Banerjee, and Pachter 2021, one pitfall of PCA, t-SNE, and U-MAP is that those methods are largely unsupervised. Most often, metadata only confirms the hypotheses or enhances the detection of possible patterns and anomalies, thus missing valuable information.
+In the paper, they disputed the assumptions of the theorem that guarantees that embeddings represent local and global structures, saying that it would be likely that they would not hold up in practice (Chari, Banerjee, and Pachter 2021, Linderman and Steinerberger 2019). More precisely, these assumptions are the existence of clusters in the data, and the appropriateness of step size, localized initiation, and inflation parameters. 
+However, I do not agree that the existence of data clusters is an unreasonable assumption. Most of the time, the very spatial nature of the technique would likely generate clusters on its own. Besides that, the other assumptions are related to the gradient descent algorithm, and they can be fine-tuned according to the data set and problem at hand. Therefore, assumption failure is more likely to arise from user misuse than anything else.
+There is also the argument that two-dimensional embeddings might remain useful not for quantities representation of data, but rather qualitative one. Using inter and intra distances for biological labels in two dimension and ambient spaces, examining the correlations of said distances, they also found that fitting the data to an arbitrary shape, produced comparable, and sometimes even better, results as the t-SNE and U-MAP projections (Chari, Banerjee, and Pachter 2021). Thus, casting further doubt into the role of such methods for data analysis. 
+
+
+
+Discussion
+In the absence of further bench-marking, one should keep the no-free lunch theorem in mind (Wolpert and Macready 1997). There will be no specific method that will reign supreme for all datasets. Practitioners should thus evaluate multiple algorithms for the same data set before choosing one.
+On top of that, different methods highlight different data features, and they have their own set of assumptions. For instance, if researchers are interested in capturing hypersensitive genes makers during the development, the PCA method is not appropriate because it does not capture the non-linear interaction expected to appear. Hence, the dimension reduction technique used depends on the question at hand. This recommendation also aligns with Heiser and Lau 2020 findings that input data structure is highly variable across single-cell technologies and biological samples, and dimensional reduction should be context-dependent.
+As the data increases in its size, so does the computational cost of its analysis. Thus, methods such as multidimensional scaling completely fail to scale, rendering it impossible to use MDS even though it would handle much better with the problem that cells that do not have the same expressed genes are classified are more similar to each other. Keeping the context of its development, it is striking that netAE had such a high computational cost.
+In addition to that, there is no consensus on the metric that should be reported while doing dimensional reduction. Chari, Banerjee, and Pachter 2021, use inter and intra distance, but  Heiser and Lau 2020 offered a new framework for structure preservation in dimension reduction.
+On top of that, we must be careful about how we interpret predictions from such models. Feature selection used with dimensional reduction is likely to find one of many possible sets of useful predictors for the response. Here, there is no theorem guarantying its uniqueness. The same goes for visualization. None of these visualizations tools are canonical in nature. They might perform poorly in quantitative terms offering little value for biological inference without proper handling and interpretation.
+ 	New solutions such as PHATE are also emerging as specific methods for 2D visualization of high dimensional (Moon et al. 2019). It vastly outperforms methods such as PCA, which does not remove enough noise to allow for high resolution of local structure, and t-SNE, which disturbs the global structure.
+Although Chari, Banerjee, and Pachter 2021 have several criticisms over the usage of U-MAP, I do not agree with all of them. In my opinion, given proper data science practices, the method is one of the best trade-offs between interpretability and performance, we currently have. Criticizing the usage of U-MAP based on bad user practice is like the criticism of p values based on people's misinterpretation of it. Moreover, there was no comparison with methods that were developed to overcome U-MAP limitations in what would be a more fair comparison.
+	
+Conclusion
+
+ As novel methodologies arise, so do novel data science techniques. The increasing complexity of sequencing data is a promising field for the usage of dimension reduction, with different techniques being used. At the present time, there is little evidence for the superiority of one methodology, but rather an awareness that all current techniques come with their own set of assumptions and that they should be evaluated on a case-by-case basis. While some techniques such as den-SNE, dens-MAP, MCML, and PHATE have results outperforming other techniques on their original papers, the absence of standard consensus metrics and the usage of different datasets make the comparison between them difficult without further benchmarking.
+
+References
+
+Chari, Tara, Joeyta Banerjee, and Lior Pachter. 2021. “The Specious Art of Single-Cell Genomics.” bioRxiv. https://doi.org/10.1101/2021.08.25.457696.
+Courville, Aaron, Ian Goodfellow, and Yoshua Bengio. 2016. Deep Learning. N.p.: MIT Press.
+DeGrave, A. J., J. D. Janizek, and SI Lee. 2021. “. AI for radiographic COVID-19 detection selects shortcuts over signal.” Nat Mach Intell 3:610-619. https://doi.org/10.1038/s42256-021-00338-7.
+Dong, Zhengyang, and Alterovitz Gil. 2021. “netAE: semi-supervised dimensionality reduction of single-cell RNA sequencing to facilitate cell labeling.” 37, no. 1 (January): 43-49. https://doi.org/10.1093/bioinformatics/btaa669.
+Ghojogh, Benyamin, Ali Ghodsi, Fakhri Karray, and Mark Crowley. 2021. “Uniform Manifold Approximation and Projection (UMAP) and its Variants: Tutorial and Survey.” arXiv.
+Heiser, CN, and KS. Lau. 2020. “A Quantitative Framework for Evaluating Single-Cell Data Structure Preservation by Dimensionality Reduction Techniques.” Cell reports vol. 31, no. 5 (May). doi:10.1016/j.celrep.2020.107576.
+James, Gareth, Trevor Hastie, Daniela Witten, and Robert Tibshirani. 2021. An Introduction to Statistical Learning: With Applications in R. N.p.: Springer US.
+Kharchenko, P. V. 2021. “The triumphs and limitations of computational methods for scRNA-seq.” Nature Methods 18 (7): 723–732. doi:10.1038/s41592-021-01171-x.
+Kobak, D., and P. Berens. 2019. “The art of using t-SNE for single-cell transcriptomics.” Nat Commun 10. https://doi.org/10.1038/s41467-019-13056-x.
+Kuhn, Max, and Kjell Johnson. 2019. Feature Engineering and Selection: A Practical Approach for Predictive Models. N.p.: CRC Press, Taylor & Francis Group.
+Lähnenmann, D., J. Köster, and E. Szczurek. 2020. “Eleven grand challenges in single-cell data science.” Genome Biology 21. https://doi.org/10.1186/s13059-020-1926-6.
+Linderman, George C., and Stefan Steinerberger. 2019. “Clustering with t-SNE, Provably.” SIAM Journal on Mathematics of Data Science 1 (2): 313–332. https://doi.org/10.1137/18M1216134.
+McInnes, Leland, John Healy, and James Melville. 2020. “UMAP: Uniform Manifold Approximation and Projection for Dimension Reduction.” arXiv.
+“Method of the Year 2013.” 2014. Nature Methods 11 (1). https://doi.org/10.1038/nmeth.2801.
+Moon, KR, D. Van Dijk, Z. Wang, W. Chen, and S. Krishnaswamy. 2019. “Visualizing structure and transitions in high-dimensional biological data.” Nature Biotechnology 37 (12): 1482–1492. doi:10.1038/s41587-019-0336-3.
+Narayan, Ashwin, Bonnie Berger, and Hyunghoon Cho. 2021. “Assessing single-cell transcriptomic variability through density-preserving data visualization.” Nature Biotechnology 39 (6): 765–774. https://doi.org/10.1038/s41587-020-00801-7.
+Svensson, Valentine, Adam Gayoso, Nir Yosef, and Lion Patcher. 2020. “Interpretable factor models of single-cell RNA-seq via variational autoencoders.” Bioinformatics 36, no. 11 (June): 3418–3421. https://doi.org/10.1093/bioinformatics/btaa169.
+Tzeng, j., H. Lu, and WH Li. 2008. Multidimensional scaling for large genomic data sets. BMC Bioinformatics (9). https://doi.org/10.1186/1471-2105-9-179.
+van der Maaten, LJP, and GE Hinton. 2008. “Visualizing Data Using t-SNE.” Journal of Machine Learning Research. 9:2579–2605.
+Wolpert, DH, and DG Macready. 1997. “No free lunch theorems for optimization.” IEEE Transactions on Evolutionary Computation 1, no. 1 (April): 67-82. doi: 10.1109/4235.585893.
+Xu, Chenling, Romain Lopez, Edouard Mehlman, Jeffrey Regier, Michael I. Jordan, and Nir Yosef. 2021. “Probabilistic harmonization and annotation of single-cell transcriptomics data with deep generative models.” Mol Syst Biol 17. https://doi.org/10.15252/msb.20209620.
+Ziegenhain, C., B. Vieth, S. Parekh, B. Reinius, Amy Guilhaumet-Adkins, Martha Smets, Heinrich Leonhardt, Holger Heyn, Ines Hellman, and Wolfgang Enard. 2017. “Comparative Analysis of Single-Cell RNA Sequencing Methods.” Molecular Cell 65, no. 4 (February): 631-643. https://doi.org/10.1016/j.molcel.2017.01.023.
+
+
