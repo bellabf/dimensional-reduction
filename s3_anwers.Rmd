@@ -1,0 +1,211 @@
+---
+title: "Introduction to Dimensional Reduction in R - UseR!22 (Section III)"
+author: "Isabella Bicalho Frazeto"
+date: '2022-06-19'
+output: html_document
+---
+
+# Section 3 
+
+## Imports
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(vegan)
+library(MASS)
+library(ggforce)
+library(cowplot)
+```
+
+## Getting to know our dataset
+
+```{r}
+
+data("swiss")
+head(swiss)
+skimr::skim(swiss)
+
+```
+
+```{r}
+swiss %>%
+  ggplot(aes(x=Education, y = Examination)) +
+  geom_point() +
+  theme_minimal_grid() +
+  panel_border(color = "black")
+
+```
+
+
+```{r}
+swiss %>%
+  ggplot(aes(x=Fertility, y = Agriculture)) +
+  geom_point() +
+  theme_minimal_grid() +
+  panel_border(color = "black")
+```
+
+
+
+# Base R
+We can calculate the Principal Coordinate Analysis (i.e Metric Multidimensional Scaling or Classical multidimensional scaling) using the cmdscale function in R.
+
+```{r}
+distance_matrix_euclidean <- swiss %>% dist(method = "euclidean")
+
+euclidean_MDS <- distance_matrix_euclidean %>% 
+                  cmdscale()
+
+tibble_euclidean_MDS <- tibble(
+                          MDS_1 = euclidean_MDS[,1], 
+                          MDS_2 = euclidean_MDS[,2],
+                          city =  rownames(euclidean_MDS)
+)
+                  
+
+tibble_euclidean_MDS %>%
+  ggplot(aes(x=MDS_1, y = MDS_2, label = city)) +
+  geom_text(check_overlap = TRUE) +
+  theme_minimal_grid() +
+  panel_border(color = "black")
+
+```
+
+
+## Let's do it using another distance 
+
+```{r}
+
+distance_matrix_manhattan <- swiss %>% dist(method = "manhattan")
+m_MDS <- distance_matrix_manhattan %>% 
+                  cmdscale()
+
+tibble_m_MDS <- tibble(
+                          MDS_1 = m_MDS[,1], 
+                          MDS_2 = m_MDS[,2],
+                          city =  rownames(m_MDS)
+)
+                  
+
+tibble_m_MDS %>%
+  ggplot(aes(x=MDS_1, y = MDS_2, label = city)) +
+  geom_text(check_overlap = TRUE) +
+  theme_minimal_grid() +
+  panel_border(color="black")
+
+```
+
+
+## The vegan package also has a similar fuction (metaMDS)
+```{r}
+library(vegan)
+vegan_mds <- metaMDS(comm = swiss, 
+                     distance = "jaccard", 
+                     trace = FALSE,
+                     autotransform = FALSE)
+
+```
+
+Similarly, we can plot it.
+
+```{r}
+plot(vegan_mds$points)
+
+```
+
+It is not super informative. We can make it better. Let's start by creating a dataframe
+
+```{r}
+
+df_MDS <- data.frame(vegan_mds$points)
+
+```
+
+
+We need to make sure our names are matching 
+
+```{r}
+#sanity check
+rownames(df_MDS) == rownames(swiss)
+```
+
+```{r}
+df_MDS$Education <- swiss$Education
+df_MDS$Fertility <- swiss$Fertility
+df_MDS$inf_mort <- swiss$Infant.Mortality
+
+df_MDS %>% 
+  ggplot(aes(x=MDS1, y=MDS2, color =  Fertility)) +
+  geom_point() +
+  theme_minimal_grid() +
+  panel_border("black")
+```
+
+## Education
+
+```{r}
+
+df_MDS %>% 
+  ggplot(aes(x=MDS1, y=MDS2, color = Education)) +
+  geom_point() +
+  theme_minimal_grid() +
+  panel_border(color="black")
+
+```
+
+## What about infant mortality?
+
+```{r}
+df_MDS %>% 
+  ggplot(aes(x=MDS1, y=MDS2, label = rownames(df_MDS), color =  inf_mort)) +
+  geom_text(check_overlap = TRUE) +
+  theme_minimal_grid() +
+  panel_border(color = "black")
+
+```
+## Finally, we can check the stress 
+
+```{r}
+
+vegan_mds$stress
+```
+
+### Non-parametric multidimensional scaling 
+
+```{r}
+library(MASS)
+
+non_metric_mds <- swiss %>%
+                    dist("canberra") %>%          
+                    isoMDS(k=5) 
+
+```
+
+Let's explore our results. We will extract the point and pass it as data.frame
+
+```{r}
+
+non_metric_mds_df <- non_metric_mds$points
+colnames(non_metric_mds_df) <- c(paste0("DIM", 1:5))
+non_metric_mds_df
+
+```
+We also plot the dimensions like we did for PCA and ICA
+
+```{r}
+non_metric_mds_df %>%
+  as_tibble() %>%
+  mutate(
+    city = rownames(non_metric_mds_df)
+  ) %>%
+  ggplot(aes(x = .panel_x, y = .panel_y)) +
+  geom_point(alpha = 0.4, size = 0.5) +
+  geom_autodensity(alpha = .3) +
+  facet_matrix(vars(-city), layer.diag = 2) + 
+  scale_color_brewer(palette = "Dark2") + 
+  scale_fill_brewer(palette = "Dark2") +
+  theme_minimal_grid() +
+  panel_border(color = "black") +
+  theme(legend.position = "bottom")
+```
+
