@@ -1,0 +1,142 @@
+---
+title: "Introduction to Dimensional Reduction in R - UseR!22 (Section IV)"
+author: "Isabella Bicalho Frazeto"
+date: '2022-06-19'
+output: html_document
+---
+
+# Section 4
+
+
+## Import Reticulate 
+
+```{r}
+library(reticulate)
+```
+
+We have to check that we have indeed create an environment link:
+
+```{r}
+Sys.getenv("RETICULATE_PYTHON")
+```
+If the string is empty, do not panic!
+There are some links to solve this:  1) https://solutions.rstudio.com/r/reticulate/
+2) https://docs.python.org/3/library/venv.html
+  
+For me it looks like this:
+  1)  python3 -m venv .venv
+  2) echo "RETICULATE_PYTHON=/usr/bin/python3.6" >> .Renviron
+  3)  echo ".Renviron" >> .gitignore
+
+
+# Using python 
+
+```{python}
+a = "Hello World" + " from Python"
+print(a)
+
+```
+
+# Calling a variable from python in R
+```{R}
+py$a
+```
+
+# How to call a variable from R in python
+```{R}
+b <- "Hello World from R"
+```
+
+```{python}
+print(r.b)
+```
+
+## We can start by making a dataset that has non-linear relationship to it
+
+```{python}
+import matplotlib.pyplot as plt
+from sklearn import manifold, datasets
+
+sr_points, sr_color = datasets.make_swiss_roll(n_samples=1500, noise = 1, random_state=0)
+```
+
+## Showing our roll from python 
+
+```{python}
+
+fig = plt.figure(figsize=(8, 6))
+ax = fig.add_subplot(111, projection="3d")
+fig.add_axes(ax)
+ax.scatter(
+    sr_points[:, 0], sr_points[:, 1], sr_points[:, 2], c=sr_color, s=50, alpha=0.8
+)
+ax.set_title("Swiss Roll in Ambient Space")
+ax.view_init(azim=-66, elev=12)
+_ = ax.text2D(0.8, 0.05, s="n_samples=1500", transform=ax.transAxes)
+
+
+```
+
+## Using T-SNE
+
+```{python}
+sr_tsne = manifold.TSNE(
+    n_components=2, perplexity=40, init="random", random_state=0
+)
+```
+
+TIP: You can access the documentation in python by calling "py_help(py$manifold)".
+
+# Fitting the T-SNE
+
+```{python}
+fitted_tsne = sr_tsne.fit_transform(sr_points)
+```
+
+
+# Showing our T-SNE in R from python
+
+```{r}
+library(ggplot2)
+library(tidyverse)
+library(cowplot)
+
+py$fitted_tsne %>%
+  as_tibble()  %>%
+  ggplot(aes(x=V1, y=V2,  color = py$sr_color)) +
+  geom_point() +
+  labs(color = "Color") +
+  theme_minimal_grid() +
+  panel_border(color = "black") +
+  scale_color_continuous(type = "viridis")
+```
+
+# UMAP from UMAP
+
+```{R}
+library(umap)
+umap_learn = umap(py$sr_points)
+
+```
+
+Seeing our results:
+
+```{r}
+umap_tibble <- umap_learn$layout %>% 
+                as_tibble() %>%
+                mutate(color= py$sr_color)
+
+umap_tibble
+```
+
+
+```{r}
+umap_tibble %>%
+  ggplot(aes(x=V1, y=V2, color = color )) +
+  geom_point() +
+  theme_minimal_grid() +
+  panel_border(color = "black") +
+  scale_color_continuous(type = "viridis")
+```
+
+
